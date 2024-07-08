@@ -1,11 +1,8 @@
 from django.db import models
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 import uuid
 
-# Create your models here.
-
-class UserManager(BaseUserManager):
+class MyUserManager(BaseUserManager):
     def create_user(self, email, first_name, last_name, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -18,19 +15,20 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, first_name, last_name, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+
         return self.create_user(email, first_name, last_name, password, **extra_fields)
 
-class User(AbstractBaseUser, PermissionsMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    email = models.EmailField(max_length=255, unique=True)
-    password = models.CharField(max_length=255)
-    phone = models.CharField(max_length=20, blank=True, null=True)
+class User(AbstractBaseUser):
+    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    first_name = models.CharField(max_length=30, null=False)
+    last_name = models.CharField(max_length=30, null=False)
+    email = models.EmailField(unique=True, null=False)
+    phone = models.CharField(max_length=15, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(auto_now_add=True)
 
-    objects = UserManager()
+    objects = MyUserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
@@ -39,7 +37,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Organisation(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    org_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255, null=False)
     description = models.TextField(blank=True, null=True)
     users = models.ManyToManyField(User, related_name='organisations')
+
+    def __str__(self):
+        return self.name
